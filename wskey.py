@@ -181,6 +181,8 @@ def check_ck(ck):  # 方法 检查 Cookie有效性 使用变量传递 单次调�
 
 # 返回值 bool jd_ck
 def getToken(wskey):  # 方法 获取 Wskey转换使用的 Token 由 JD_API 返回 这里传递 wskey
+    logger.info("wskey:" + ws)
+
     try:  # 异常捕捉
         url = str(base64.b64decode(url_t).decode()) + 'genToken'  # 设置云端服务器地址 路由为 genToken
         header = {"User-Agent": ua}  # 设置 HTTP头
@@ -202,6 +204,7 @@ def getToken(wskey):  # 方法 获取 Wskey转换使用的 Token 由 JD_API 返�
         res = requests.post(url=url, params=params, headers=headers, data=data, verify=False, timeout=10)  # HTTP请求 [POST] 超时 10秒
         res_json = json.loads(res.text)  # Json模块 取值
         tokenKey = res_json['tokenKey']  # 取出TokenKey
+        logger.info("res_json: " + res_json)
     except Exception as err:  # 异常捕捉
         logger.info("JD_WSKEY接口抛出错误 尝试重试 更换IP")  # 标准日志输出
         logger.info(str(err))  # 标注日志输出
@@ -465,6 +468,7 @@ if __name__ == '__main__':   # Python主函数执行入口
     else:  # 判断分支
         sleepTime = 10  # 默认休眠时间 10秒
     for ws in wslist:  # wslist变量 for循环  [wslist -> ws]
+        logger.info("ws:" + ws)
         wspin = ws.split(";")[0]  # 变量分割 ;
         if "pin" in wspin:  # 判断 pin 是否存在于 [wspin]
             wspin = "pt_" + wspin + ";"  # 封闭变量
