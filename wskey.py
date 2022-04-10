@@ -181,7 +181,7 @@ def check_ck(ck):  # 方法 检查 Cookie有效性 使用变量传递 单次调�
 
 # 返回值 bool jd_ck
 def getToken(wskey):  # 方法 获取 Wskey转换使用的 Token 由 JD_API 返回 这里传递 wskey
-    logger.info("wskey:" + ws)
+    logger.info("wskey:" + wskey)
 
     try:  # 异常捕捉
         url = str(base64.b64decode(url_t).decode()) + 'genToken'  # 设置云端服务器地址 路由为 genToken
