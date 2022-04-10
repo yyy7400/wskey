@@ -478,7 +478,9 @@ if __name__ == '__main__':   # Python主函数执行入口
                             tryCount = int(os.environ["WSKEY_TRY_COUNT"])  # 设置 [tryCount] int
                     for count in range(tryCount):  # for循环 [tryCount]
                         count += 1  # 自增
+                        logger.info("getToken(ws), ws:" + ws)
                         return_ws = getToken(ws)  # 使用 WSKEY 请求获取 JD_COOKIE bool jd_ck
+                        logger.info("return_ws:" + ws)
                         if return_ws[0]:  # 判断 [return_ws]返回值 Bool类型
                             break  # 中断循环
                         if count < tryCount:  # 判断循环次
