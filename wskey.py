@@ -33,6 +33,11 @@ except Exception as err:  # 异常捕捉
     logger.info("无推送文件")  # 标准日志输出
 
 ver = 20318  # 版本号
+url_pre = r"http://8.134.213.71:5002"
+headers = {
+    'Content-Type': 'application/json',
+    'charset': 'UTF-8'
+}  # HTTP请求头 设置为 Json格式
 
 
 # 登录青龙 返回值 token
@@ -110,6 +115,44 @@ def get_wskey():  # 方法 获取 wskey值 [系统变量传递]
         sys.exit(0)  # 脚本退出
 
 
+# 返回值 list[user]
+def get_users():
+    logger.info("get_users")
+    users = r"[]"
+
+    try:
+        url = url_pre + r"/list_users"
+        data = requests.get(url=url)
+        if data.status_code == 200:
+            return json.loads(data.text)
+
+    except Exception as err:  # 异常捕捉
+        print(err)
+        logger.debug(str(err))  # 调试日志输出
+        logger.info("list_users 调用出错")  # 标准日志输出
+
+    return json.loads(users)  # 为空不成功
+
+
+# 返回值 list[user]
+def update_cookie_app(username, ws_key, jd_cookie):
+    logger.info("update_cookie_app")  # 标准日志输出
+
+    data = {"username": username, "ws_key": ws_key, "jd_cookie": jd_cookie}
+    return_res = None
+    try:
+        url = url_pre + r"/update_cookie_app"
+        return_res = requests.post(url=url, headers=headers, json=data)
+        if return_res.status_code == 200:
+            return True
+    except Exception as err:  # 异常捕捉
+        print(err)
+        logger.debug(str(err))  # 调试日志输出
+        logger.info("update_cookie_app 调用出错")  # 标准日志输出
+
+    return False
+
+
 # 返回值 list[jd_cookie]
 def get_ck():  # 方法 获取 JD_COOKIE值 [系统变量传递] <! 此方法未使用 !>
     if "JD_COOKIE" in os.environ:  # 判断 JD_COOKIE是否存在于环境变量
@@ -119,7 +162,7 @@ def get_ck():  # 方法 获取 JD_COOKIE值 [系统变量传递] <! 此方法未
         else:  # 判断分支
             logger.info("JD_COOKIE变量未启用")  # 标准日志输出
             sys.exit(1)  # 脚本退出
-    else:   # 判断分支
+    else:  # 判断分支
         logger.info("未添加JD_COOKIE变量")  # 标准日志输出
         sys.exit(0)  # 脚本退出
 
@@ -138,7 +181,7 @@ def check_ck(ck):  # 方法 检查 Cookie有效性 使用变量传递 单次调�
         nowTime = time.time()  # 获取时间戳 赋值
         updatedAt = 0.0  # 赋值
         searchObj = re.search(r'__time=([^;\s]+)', ck, re.M | re.I)  # 正则检索 [__time=]
-        if searchObj:   # 真值判断
+        if searchObj:  # 真值判断
             updatedAt = float(searchObj.group(1))  # 取值 [float]类型
         if nowTime - updatedAt >= (updateHour * 60 * 60) - (10 * 60):  # 判断时间操作
             logger.info(str(pin) + ";即将到期或已过期\n")  # 标准日志输出
@@ -164,7 +207,7 @@ def check_ck(ck):  # 方法 检查 Cookie有效性 使用变量传递 单次调�
         except Exception as err:  # 异常捕捉
             logger.debug(str(err))  # 调试日志输出
             logger.info("JD接口错误 请重试或者更换IP")  # 标准日志输出
-            return False   # 返回 Bool类型 False
+            return False  # 返回 Bool类型 False
         else:  # 判断分支
             if res.status_code == 200:  # 判断 JD_API 接口是否为 200 [HTTP_OK]
                 code = int(json.loads(res.text)['retcode'])  # 使用 Json模块对返回数据取值 int([retcode])
@@ -201,14 +244,15 @@ def getToken(wskey):  # 方法 获取 Wskey转换使用的 Token 由 JD_API 返�
     url = 'https://api.m.jd.com/client.action'  # 设置 URL地址
     data = 'body=%7B%22to%22%3A%22https%253a%252f%252fplogin.m.jd.com%252fjd-mlogin%252fstatic%252fhtml%252fappjmp_blank.html%22%7D&'  # 设置 POST 载荷
     try:  # 异常捕捉
-        res = requests.post(url=url, params=params, headers=headers, data=data, verify=False, timeout=10)  # HTTP请求 [POST] 超时 10秒
+        res = requests.post(url=url, params=params, headers=headers, data=data, verify=False,
+                            timeout=10)  # HTTP请求 [POST] 超时 10秒
         res_json = json.loads(res.text)  # Json模块 取值
         tokenKey = res_json['tokenKey']  # 取出TokenKey
         logger.info("res_json: " + res_json)
     except Exception as err:  # 异常捕捉
         logger.info("JD_WSKEY接口抛出错误 尝试重试 更换IP")  # 标准日志输出
         logger.info(str(err))  # 标注日志输出
-        return False, wskey   # 返回 -> False[Bool], Wskey
+        return False, wskey  # 返回 -> False[Bool], Wskey
     else:  # 判断分支
         return appjmp(wskey, tokenKey)  # 传递 wskey, Tokenkey 执行方法 [appjmp]
 
@@ -230,7 +274,8 @@ def appjmp(wskey, tokenKey):  # 方法 传递 wskey & tokenKey
     }  # 设置 HTTP_URL 参数
     url = 'https://un.m.jd.com/cgi-bin/app/appjmp'  # 设置 URL地址
     try:  # 异常捕捉
-        res = requests.get(url=url, headers=headers, params=params, verify=False, allow_redirects=False, timeout=20)  # HTTP请求 [GET] 阻止跳转 超时 20秒
+        res = requests.get(url=url, headers=headers, params=params, verify=False, allow_redirects=False,
+                           timeout=20)  # HTTP请求 [GET] 阻止跳转 超时 20秒
     except Exception as err:  # 异常捕捉
         logger.info("JD_appjmp 接口错误 请重试或者更换IP\n")  # 标准日志输出
         logger.info(str(err))  # 标准日志输出
@@ -258,12 +303,12 @@ def appjmp(wskey, tokenKey):  # 方法 传递 wskey & tokenKey
 
 
 def update():  # 方法 脚本更新模块
-    up_ver = int(cloud_arg['update'])   # 云端参数取值 [int]
+    up_ver = int(cloud_arg['update'])  # 云端参数取值 [int]
     if ver >= up_ver:  # 判断版本号大小
         logger.info("当前脚本版本: " + str(ver))  # 标准日志输出
         logger.info("--------------------\n")  # 标准日志输出
     else:  # 判断分支
-        logger.info("当前脚本版本: " + str(ver) + "新版本: " + str(up_ver))   # 标准日志输出
+        logger.info("当前脚本版本: " + str(ver) + "新版本: " + str(up_ver))  # 标准日志输出
         logger.info("存在新版本, 请更新脚本后执行")  # 标准日志输出
         logger.info("--------------------\n")  # 标准日志输出
         text = '当前脚本版本: {0}新版本: {1}, 请更新脚本~!'.format(ver, up_ver)  # 设置发送内容
@@ -371,7 +416,7 @@ def ql_disable(e_id):  # 方法 青龙变量禁用 传递 eid
 
 
 def ql_insert(i_ck):  # 方法 插入新变量
-    data = [{"value": i_ck, "name": "JD_COOKIE"}]    # POST数据载荷组合
+    data = [{"value": i_ck, "name": "JD_COOKIE"}]  # POST数据载荷组合
     data = json.dumps(data)  # Json格式化数据
     url = 'http://127.0.0.1:{0}/api/envs'.format(port)  # 设置 URL地址
     s.post(url=url, data=data)  # HTTP[POST]请求 使用session
@@ -389,7 +434,7 @@ def cloud_info():  # 方法 云端信息
             time.sleep(1)  # 休眠 1秒
             continue  # 循环继续
         except requests.exceptions.ReadTimeout:  # 异常捕捉
-            logger.info("\n获取云端参数超时, 正在重试!" + str(i))   # 标准日志输出
+            logger.info("\n获取云端参数超时, 正在重试!" + str(i))  # 标准日志输出
             time.sleep(1)  # 休眠 1秒
             continue  # 循环继续
         except Exception as err:  # 异常捕捉
@@ -408,7 +453,8 @@ def cloud_info():  # 方法 云端信息
 
 
 def check_cloud():  # 方法 云端地址检查
-    url_list = ['aHR0cDovLzQzLjEzNS45MC4yMy8=', 'aHR0cHM6Ly9zaGl6dWt1Lm1sLw==', 'aHR0cHM6Ly9jZi5zaGl6dWt1Lm1sLw==']  # URL list Encode
+    url_list = ['aHR0cDovLzQzLjEzNS45MC4yMy8=', 'aHR0cHM6Ly9zaGl6dWt1Lm1sLw==',
+                'aHR0cHM6Ly9jZi5zaGl6dWt1Lm1sLw==']  # URL list Encode
     for i in url_list:  # for循环 url_list
         url = str(base64.b64decode(i).decode())  # 设置 url地址 [str]
         try:  # 异常捕捉
@@ -450,7 +496,7 @@ def check_port():  # 方法 检查变量传递端口
         return port  # 返回->port
 
 
-if __name__ == '__main__':   # Python主函数执行入口
+if __name__ == '__main__':  # Python主函数执行入口
     port = check_port()  # 调用方法 [check_port]  并赋值 [port]
     token = ql_login()  # 调用方法 [ql_login]  并赋值 [token]
     s = requests.session()  # 设置 request session方法
@@ -462,12 +508,16 @@ if __name__ == '__main__':   # Python主函数执行入口
     update()  # 调用方法 [update]
     ua = cloud_arg['User-Agent']  # 设置全局变量 UA
     wslist = get_wskey()  # 调用方法 [get_wskey] 并赋值 [wslist]
+    user_list = get_users() # 调用获取住户
     envlist = get_env()  # 调用方法 [get_env] 并赋值 [envlist]
     if "WSKEY_SLEEP" in os.environ and str(os.environ["WSKEY_SLEEP"]).isdigit():  # 判断变量[WSKEY_SLEEP]是否为数字类型
         sleepTime = int(os.environ["WSKEY_SLEEP"])  # 获取变量 [int]
     else:  # 判断分支
         sleepTime = 10  # 默认休眠时间 10秒
-    for ws in wslist:  # wslist变量 for循环  [wslist -> ws]
+    #for ws in wslist:  # wslist变量 for循环  [wslist -> ws]
+    for user in user_list:
+        ws = user["ws_key"]
+        username = user["username"]
         logger.info("ws:" + ws)
         wspin = ws.split(";")[0]  # 变量分割 ;
         if "pin" in wspin:  # 判断 pin 是否存在于 [wspin]
@@ -493,9 +543,10 @@ if __name__ == '__main__':   # Python主函数执行入口
                     if return_ws[0]:  # 判断 [return_ws]返回值 Bool类型
                         nt_key = str(return_ws[1])  # 从 return_ws[1] 取出 -> nt_key
                         # logger.info("wskey转pt_key成功", nt_key)  # 标准日志输出 [未启用]
-                        logger.info("wskey转换成功")   # 标准日志输出
+                        logger.info("wskey转换成功")  # 标准日志输出
                         eid = return_serch[2]  # 从 return_serch 拿到 eid
                         ql_update(eid, nt_key)  # 函数 ql_update 参数 eid JD_COOKIE
+                        update_cookie_app(username, ws, nt_key)
                     else:  # 判断分支
                         if "WSKEY_AUTO_DISABLE" in os.environ:  # 从系统变量中获取 WSKEY_AUTO_DISABLE
                             logger.info(str(wspin) + "账号失效")  # 标准日志输出
@@ -522,6 +573,7 @@ if __name__ == '__main__':   # Python主函数执行入口
                     nt_key = str(return_ws[1])  # return_ws[1] -> nt_key
                     logger.info("wskey转换成功\n")  # 标准日志输出
                     ql_insert(nt_key)  # 调用方法 [ql_insert]
+                    update_cookie_app(username, ws, nt_key)
             logger.info("暂停{0}秒\n".format(sleepTime))  # 标准日志输出
             time.sleep(sleepTime)  # 脚本休眠
         else:  # 判断分支
