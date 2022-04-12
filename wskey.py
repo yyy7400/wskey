@@ -248,7 +248,6 @@ def getToken(wskey):  # 方法 获取 Wskey转换使用的 Token 由 JD_API 返�
                             timeout=10)  # HTTP请求 [POST] 超时 10秒
         res_json = json.loads(res.text)  # Json模块 取值
         tokenKey = res_json['tokenKey']  # 取出TokenKey
-        logger.info("res_json: " + res_json)
     except Exception as err:  # 异常捕捉
         logger.info("JD_WSKEY接口抛出错误 尝试重试 更换IP")  # 标准日志输出
         logger.info(str(err))  # 标注日志输出
